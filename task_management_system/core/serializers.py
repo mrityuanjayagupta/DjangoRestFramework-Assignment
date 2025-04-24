@@ -1,4 +1,4 @@
-from .models import Project, Task, User
+from .models import Project, Task, User, Comment
 from rest_framework import serializers
 
 
@@ -82,3 +82,19 @@ class TaskSerializer(serializers.ModelSerializer):
         )
         task.save()
         return task
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ["id", "content", "author", "task_id", "project_id", "created_at"]
+        read_only_fields = ["id", "author", "created_at"]
+
+    def create(self, validated_data):
+        comment = Comment.objects.create(
+            author=self.context["request"].user, **validated_data
+        )
+        comment.save()
+        return comment
