@@ -85,7 +85,7 @@ class TaskSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    created_at = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Comment
