@@ -43,7 +43,7 @@ class UserViewSetTestCase(APITestCase):
             email="developer2@deloitte.com",
             username="developer2",
             password="password",
-            role=DEVELOPER
+            role=DEVELOPER,
         )
 
         self.project1 = Project.objects.create(
@@ -91,7 +91,7 @@ class UserViewSetTestCase(APITestCase):
         url = reverse("user-list")
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data['detail'], 'Permission denied for user.')
+        self.assertEqual(response.data["detail"], "Permission denied for user.")
 
     def test_admin_can_retrieve_any_user(self):
         self.authenticate(self.admin)
