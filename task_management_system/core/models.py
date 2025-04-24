@@ -71,3 +71,33 @@ class Project(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class TaskStatus(models.TextChoices):
+    TO_DO = "TO_DO", "To Do"
+    IN_PROGRESS = "IN_PROGRESS", "In Progress"
+    DONE = "DONE", "Done"
+
+
+class Priority(models.TextChoices):
+    LOW = "LOW", "Low Priority"
+    MEDIUM = "MEDIUM", "Medium Priority"
+    HIGH = "HIGH", "High Priority"
+
+
+class Task(models.Model):
+    title = models.CharField(max_length=50)
+    description = models.CharField(max_length=200)
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name="created_tasks"
+    )
+    status = models.CharField(max_length=20, choices=TaskStatus.choices)
+    priority = models.CharField(max_length=20, choices=Priority.choices)
+    project_id = models.ForeignKey(
+        Project, on_delete=models.SET_NULL, null=True, related_name="tasks"
+    )
+    assigned_to = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name="assigned_tasks"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
