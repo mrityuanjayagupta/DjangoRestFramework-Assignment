@@ -1,4 +1,4 @@
-from .models import Project, User
+from .models import Project, Task, User
 from rest_framework import serializers
 
 
@@ -47,7 +47,6 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         members = validated_data.pop("members")
-        project = Project(**validated_data)
         project = Project.objects.create(
             created_by=self.context["request"].user, **validated_data
         )
@@ -56,3 +55,31 @@ class ProjectSerializer(serializers.ModelSerializer):
             project.members.add(member)
         project.save()
         return project
+
+
+class TaskSerializer(serializers.ModelSerializer):
+    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = Task
+        fields = [
+            "id",
+            "title",
+            "description",
+            "created_by",
+            "status",
+            "priority",
+            "project_id",
+            "assigned_to",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_by", "created_at", "updated_at"]
+
+    def create(self, validated_data):
+        members = validated_data.pop("members")
+        task = Task.objects.create(
+            created_by=self.context["request"].user, **validated_data
+        )
+        task.save()
+        return task

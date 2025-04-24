@@ -1,8 +1,8 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework_roles.granting import is_self, allof
-from .models import Project, User
-from .serializers import CustomUserDetailsSerializer, ProjectSerializer
+from .models import Project, Task, User
+from .serializers import CustomUserDetailsSerializer, ProjectSerializer, TaskSerializer
 from rest_framework.response import Response
 
 
@@ -37,7 +37,7 @@ class ProjectViewSet(ModelViewSet):
             "CLIENT": True,
         },
         "retrieve": {
-            "ADMIN": is_project_member,
+            "ADMIN": True,
             "PROJECT_MANAGER": True,
             "TECH_LEAD": is_project_member,
             "DEVELOPER": is_project_member,
@@ -59,3 +59,8 @@ class ProjectViewSet(ModelViewSet):
             projects = Project.objects.filter(members=request.user)
         serializer = self.get_serializer(projects, many=True)
         return Response(serializer.data)
+
+
+class TaskViewSet(ModelViewSet):
+    serializer_class = TaskSerializer
+    queryset = Task.objects.all()
