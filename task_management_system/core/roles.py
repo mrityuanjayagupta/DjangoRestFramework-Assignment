@@ -1,6 +1,10 @@
-from rest_framework_roles.roles import is_user, is_anon, is_admin
+from rest_framework_roles.roles import is_user
 
 from core.constants import ADMIN, CLIENT, DEVELOPER, PROJECT_MANAGER, TECH_LEAD
+
+
+def is_admin(request, view):
+    return is_user(request, view) and request.user.role == ADMIN
 
 
 def is_project_manager(request, view):

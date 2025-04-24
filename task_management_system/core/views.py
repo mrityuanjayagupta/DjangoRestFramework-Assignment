@@ -23,8 +23,6 @@ from rest_framework.response import Response
 def is_user_in_projects(request, view):
     user = request.user
     target_user = view.get_object()
-    print(user)
-    print(target_user)
     projects = Project.objects.filter(Q(created_by=user) | Q(members=user)).distinct()
     return Project.objects.filter(
         Q(members=target_user) | Q(created_by=target_user), id__in=projects
@@ -69,7 +67,7 @@ class UserViewSet(ModelViewSet):
             users = User.objects.filter(
                 Q(project_members__in=projects) | Q(projects__in=projects)
             ).distinct()
-        else:
+        elif user.role in [TECH_LEAD, DEVELOPER, CLIENT]:
             users = User.objects.none()
         serializer = self.get_serializer(users, many=True)
         return Response(serializer.data)
