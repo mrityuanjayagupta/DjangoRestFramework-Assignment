@@ -5,13 +5,7 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 
-from task_management_system.core.constants import (
-    ADMIN,
-    Priority,
-    TaskStatus,
-    UserRole,
-    UserRoleChoices,
-)
+from core.constants import ADMIN, PriorityChoices, TaskStatusChoices, UserRoleChoices
 
 
 class UserManager(BaseUserManager):
@@ -42,7 +36,7 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=30, unique=True)
     email = models.EmailField(unique=True)
-    role = models.CharField(max_length=20, choices=UserRole.choices)
+    role = models.CharField(max_length=20, choices=UserRoleChoices.choices)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
@@ -77,8 +71,8 @@ class Task(models.Model):
     created_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name="created_tasks"
     )
-    status = models.CharField(max_length=20, choices=TaskStatus.choices)
-    priority = models.CharField(max_length=20, choices=Priority.choices)
+    status = models.CharField(max_length=20, choices=TaskStatusChoices.choices)
+    priority = models.CharField(max_length=20, choices=PriorityChoices.choices)
     project_id = models.ForeignKey(
         Project, on_delete=models.SET_NULL, null=True, related_name="tasks"
     )

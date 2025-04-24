@@ -11,9 +11,9 @@ class UserRoleChoices(models.TextChoices):
 
 ADMIN = UserRoleChoices.ADMIN.value
 PROJECT_MANAGER = UserRoleChoices.PROJECT_MANAGER.value
-TECH_LEAD = UserRoleChoices.PROJECT_MANAGER.value
+TECH_LEAD = UserRoleChoices.TECH_LEAD.value
 DEVELOPER = UserRoleChoices.DEVELOPER.value
-CLIENT = UserRoleChoices.DEVELOPER.value
+CLIENT = UserRoleChoices.CLIENT.value
 
 
 class TaskStatusChoices(models.TextChoices):
