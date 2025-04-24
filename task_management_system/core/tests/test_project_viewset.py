@@ -63,7 +63,7 @@ class ProjectViewSetTestCase(APITestCase):
         url = reverse("project-list")
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        project_names = [proj["name"] for proj in response.data]
+        project_names = [project["name"] for project in response.data]
         self.assertIn(self.project1.name, project_names)
         self.assertIn(self.project2.name, project_names)
 
@@ -72,7 +72,7 @@ class ProjectViewSetTestCase(APITestCase):
         url = reverse("project-list")
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        project_names = [proj["name"] for proj in response.data]
+        project_names = [project["name"] for project in response.data]
         self.assertIn(self.project1.name, project_names)
         self.assertIn(self.project2.name, project_names)
         self.assertNotIn(self.project3.name, project_names)
@@ -83,7 +83,7 @@ class ProjectViewSetTestCase(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        project_names = [proj["name"] for proj in response.data]
+        project_names = [project["name"] for project in response.data]
         self.assertIn(self.project1.name, project_names)
         self.assertNotIn(self.project2.name, project_names)
 
@@ -93,6 +93,6 @@ class ProjectViewSetTestCase(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        project_names = [proj["name"] for proj in response.data]
+        project_names = [project["name"] for project in response.data]
         self.assertIn(self.project1.name, project_names)
         self.assertNotIn(self.project3.name, project_names)

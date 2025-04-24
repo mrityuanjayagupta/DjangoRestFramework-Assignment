@@ -66,7 +66,7 @@ class UserViewSetTestCase(APITestCase):
         url = reverse("user-list")
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        returned_ids = set([u["id"] for u in response.data])
+        returned_ids = set([user["id"] for user in response.data])
         all_ids = set(User.objects.values_list("id", flat=True))
         self.assertEqual(returned_ids, all_ids)
 
@@ -83,7 +83,7 @@ class UserViewSetTestCase(APITestCase):
                 Q(project_members__in=projects) | Q(projects__in=projects)
             ).values_list("id", flat=True)
         )
-        returned_ids = set([u["id"] for u in response.data])
+        returned_ids = set([user["id"] for user in response.data])
         self.assertEqual(returned_ids, allowed_ids)
 
     def test_developer_cannot_list_users(self):
