@@ -5,13 +5,13 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 
-
-class UserRole(models.TextChoices):
-    ADMIN = "ADMIN", "Admin"
-    PROJECT_MANAGER = "PROJECT_MANAGER", "Project Manager"
-    TECH_LEAD = "TECH_LEAD", "Tech Lead"
-    DEVELOPER = "DEVELOPER", "Developer"
-    CLIENT = "CLIENT", "Client"
+from task_management_system.core.constants import (
+    ADMIN,
+    Priority,
+    TaskStatus,
+    UserRole,
+    UserRoleChoices,
+)
 
 
 class UserManager(BaseUserManager):
@@ -36,9 +36,7 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_active", True)
         extra_fields.setdefault("is_superuser", True)
-        return self._create_user(
-            username, email, password, role="ADMIN", **extra_fields
-        )
+        return self._create_user(username, email, password, role=ADMIN, **extra_fields)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -71,18 +69,6 @@ class Project(models.Model):
 
     def __str__(self):
         return self.name
-
-
-class TaskStatus(models.TextChoices):
-    TO_DO = "TO_DO", "To Do"
-    IN_PROGRESS = "IN_PROGRESS", "In Progress"
-    DONE = "DONE", "Done"
-
-
-class Priority(models.TextChoices):
-    LOW = "LOW", "Low Priority"
-    MEDIUM = "MEDIUM", "Medium Priority"
-    HIGH = "HIGH", "High Priority"
 
 
 class Task(models.Model):
