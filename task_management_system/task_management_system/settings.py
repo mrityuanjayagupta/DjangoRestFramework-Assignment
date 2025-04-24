@@ -25,8 +25,16 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "rest_framework_roles",
     "core",
 ]
+
+REST_FRAMEWORK_ROLES = {
+    "ROLES": "core.roles.ROLES",
+    "SKIP_MODULES": [
+        "django.*",
+    ],
+}
 
 AUTH_USER_MODEL = "core.User"
 

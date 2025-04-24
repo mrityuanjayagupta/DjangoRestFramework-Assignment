@@ -18,10 +18,12 @@ class CustomUserDetailsSerializer(serializers.ModelSerializer):
         return user
 
     def update(self, instance, validated_data):
-        password = validated_data.pop("password")
         for key, value in validated_data.items():
-            setattr(instance, key, value)
-        if password:
+            if key != "password":
+                setattr(instance, key, value)
+        if validated_data.get("password"):
+            password = validated_data.pop("password")
             instance.set_password(password)
         instance.save()
         return instance
+    
