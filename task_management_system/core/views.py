@@ -20,17 +20,59 @@ from .serializers import (
 from rest_framework.response import Response
 
 
+def is_user_in_projects(request, view):
+    user = request.user
+    target_user = view.get_object()
+    print(user)
+    print(target_user)
+    projects = Project.objects.filter(Q(created_by=user) | Q(members=user)).distinct()
+    return Project.objects.filter(
+        Q(members=target_user) | Q(created_by=target_user), id__in=projects
+    ).exists()
+
+
+def is_allowed_to_retrieve(request, view):
+    return is_self(request, view) or is_user_in_projects(request, view)
+
+
 class UserViewSet(ModelViewSet):
     serializer_class = CustomUserDetailsSerializer
     queryset = User.objects.all()
     view_permissions = {
         "create": {ADMIN: True},
-        "list": {ADMIN: True},
-        "retrieve": {ADMIN: True},
-        "update,partial_update": {ADMIN: True},
+        "list": {ADMIN: True, PROJECT_MANAGER: True},
+        "retrieve": {
+            ADMIN: True,
+            PROJECT_MANAGER: is_allowed_to_retrieve,
+            TECH_LEAD: is_self,
+            DEVELOPER: is_self,
+            CLIENT: is_self,
+        },
+        "update,partial_update": {
+            ADMIN: True,
+            PROJECT_MANAGER: True,
+            CLIENT: is_self,
+            DEVELOPER: is_self,
+            CLIENT: is_self,
+        },
         "options": {ADMIN: True},
         "destroy": {ADMIN: True},
     }
+
+    def list(self, request):
+        users = User.objects.all()
+        user = request.user
+        if user.role == PROJECT_MANAGER:
+            projects = Project.objects.filter(
+                Q(created_by=user) | Q(members=user)
+            ).distinct()
+            users = User.objects.filter(
+                Q(project_members__in=projects) | Q(projects__in=projects)
+            ).distinct()
+        else:
+            users = User.objects.none()
+        serializer = self.get_serializer(users, many=True)
+        return Response(serializer.data)
 
 
 def is_project_member(request, view):

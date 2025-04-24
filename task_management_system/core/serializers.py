@@ -3,13 +3,12 @@ from rest_framework import serializers
 
 
 class CustomUserDetailsSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(min_length=6)
+    password = serializers.CharField(min_length=6, write_only=True)
 
     class Meta:
         model = User
-        fields = ("id", "username", "email", "password", "role", "date_joined")
+        fields = "__all__"
         read_only_fields = ["id", "date_joined"]
-        write_only_fields = ["password"]
 
     def create(self, validated_data):
         password = validated_data.pop("password")
@@ -34,15 +33,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = [
-            "id",
-            "name",
-            "description",
-            "created_by",
-            "members",
-            "created_at",
-            "updated_at",
-        ]
+        fields = "__all__"
         read_only_fields = ["id", "created_by", "created_at", "updated_at"]
 
     def create(self, validated_data):
@@ -62,18 +53,7 @@ class TaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Task
-        fields = [
-            "id",
-            "title",
-            "description",
-            "created_by",
-            "status",
-            "priority",
-            "project_id",
-            "assigned_to",
-            "created_at",
-            "updated_at",
-        ]
+        fields = "__all__"
         read_only_fields = ["id", "created_by", "created_at", "updated_at"]
 
     def create(self, validated_data):
@@ -89,7 +69,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ["id", "content", "author", "task_id", "project_id", "created_at"]
+        fields = "__all__"
         read_only_fields = ["id", "author", "created_at"]
 
     def create(self, validated_data):
