@@ -1,4 +1,4 @@
-from .models import User
+from .models import Project, User
 from rest_framework import serializers
 
 
@@ -9,6 +9,7 @@ class CustomUserDetailsSerializer(serializers.ModelSerializer):
         model = User
         fields = ("id", "username", "email", "password", "role", "date_joined")
         read_only_fields = ["id", "date_joined"]
+        # write_only_fields = ["password"]
 
     def create(self, validated_data):
         password = validated_data.pop("password")
@@ -26,3 +27,32 @@ class CustomUserDetailsSerializer(serializers.ModelSerializer):
             instance.set_password(password)
         instance.save()
         return instance
+
+
+class ProjectSerializer(serializers.ModelSerializer):
+    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = Project
+        fields = [
+            "id",
+            "name",
+            "description",
+            "created_by",
+            "members",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_by", "created_at", "updated_at"]
+
+    def create(self, validated_data):
+        members = validated_data.pop("members")
+        project = Project(**validated_data)
+        project = Project.objects.create(
+            created_by=self.context["request"].user, **validated_data
+        )
+        project.save()
+        for member in members:
+            project.members.add(member)
+        project.save()
+        return project

@@ -58,6 +58,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return f"{self.username} ({self.role})"
 
-    class Meta:
-        verbose_name = "User"
-        verbose_name_plural = "Users"
+
+class Project(models.Model):
+    name = models.CharField(max_length=50)
+    description = models.CharField(max_length=200)
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name="projects"
+    )
+    members = models.ManyToManyField(User, related_name="project_members")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
