@@ -64,6 +64,8 @@ class ProjectViewSet(ModelViewSet):
     def list(self, request):
         projects = Project.objects.all()
         user = request.user
+        if user.role == PROJECT_MANAGER:
+            projects = Project.objects.filter(Q(members=user) | Q(created_by=user))
         if user.role in [TECH_LEAD, DEVELOPER, CLIENT]:
             projects = Project.objects.filter(members=user)
         serializer = self.get_serializer(projects, many=True)

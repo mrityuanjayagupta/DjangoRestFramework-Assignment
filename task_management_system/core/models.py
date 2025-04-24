@@ -81,3 +81,17 @@ class Task(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class Comment(models.Model):
+    content = models.CharField(max_length=200)
+    author = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name="created_comments"
+    )
+    task_id = models.ForeignKey(
+        Task, on_delete=models.SET_NULL, null=True, related_name="comments"
+    )
+    project_id = models.ForeignKey(
+        Project, on_delete=models.SET_NULL, null=True, related_name="comments"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
