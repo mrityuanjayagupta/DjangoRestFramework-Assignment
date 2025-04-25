@@ -187,7 +187,10 @@ class TaskViewSet(ModelViewSet):
             TECH_LEAD: anyof(is_task_creator, is_task_assignee),
         },
         "options": {ADMIN: True, PROJECT_MANAGER: True},
-        "destroy": {ADMIN: True, PROJECT_MANAGER: is_project_member_or_creator_using_task},
+        "destroy": {
+            ADMIN: True,
+            PROJECT_MANAGER: is_project_member_or_creator_using_task,
+        },
     }
 
     def list(self, request):
@@ -252,6 +255,12 @@ def check_comment(request, view):
     return check_comment_using_task_and_project(user, project_id, task_id)
 
 
+def is_comment_author(request, view):
+    user = request.user
+    comment = view.get_object()
+    return comment.author == user
+
+
 class CommentViewSet(ModelViewSet):
     serializer_class = CommentSerializer
     queryset = Comment.objects.all()
@@ -278,6 +287,13 @@ class CommentViewSet(ModelViewSet):
             DEVELOPER: check_comment,
             CLIENT: check_comment,
         },
+        "update,partial_update": {
+            ADMIN: True,
+            PROJECT_MANAGER: is_comment_author,
+            TECH_LEAD: is_comment_author,
+            DEVELOPER: is_comment_author,
+            CLIENT: is_comment_author,
+        },
         "options": {ADMIN: True, PROJECT_MANAGER: True},
         "destroy": {
             ADMIN: True,
@@ -289,6 +305,7 @@ class CommentViewSet(ModelViewSet):
 
     def list(self, request):
         tasks = Comment.objects.all()
+        projects = Project.objects.all()
         user = request.user
 
         if user.role == PROJECT_MANAGER:
@@ -303,8 +320,11 @@ class CommentViewSet(ModelViewSet):
                 Q(assigned_to=user) | Q(created_by=user)
             ).distinct()
             projects = Project.objects.filter(members=user)
+        task_ids = tasks.values_list("id", flat=True)
+        project_ids = projects.values_list("id", flat=True)
+
         comments = Comment.objects.filter(
-            Q(task_id__in=tasks) | Q(project_id__in=projects)
+            Q(task_id__in=task_ids) | Q(project_id__in=project_ids)
         ).distinct()
         serializer = self.get_serializer(comments, many=True)
         return Response(serializer.data)
