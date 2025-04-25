@@ -46,13 +46,7 @@ class UserViewSet(ModelViewSet):
             DEVELOPER: is_self,
             CLIENT: is_self,
         },
-        "update,partial_update": {
-            ADMIN: True,
-            PROJECT_MANAGER: True,
-            CLIENT: is_self,
-            DEVELOPER: is_self,
-            CLIENT: is_self,
-        },
+        "update,partial_update": {ADMIN: True},
         "options": {ADMIN: True},
         "destroy": {ADMIN: True},
     }
@@ -79,6 +73,12 @@ def is_project_member(request, view):
     return project.members.filter(pk=user.pk).exists()
 
 
+def is_project_creator(request, view):
+    user = request.user
+    project = view.get_object()
+    return project.created_by == user
+
+
 class ProjectViewSet(ModelViewSet):
     serializer_class = ProjectSerializer
     queryset = Project.objects.all()
@@ -96,14 +96,20 @@ class ProjectViewSet(ModelViewSet):
         },
         "retrieve": {
             ADMIN: True,
-            PROJECT_MANAGER: True,
+            PROJECT_MANAGER: anyof(is_project_creator, is_project_member),
             TECH_LEAD: is_project_member,
             DEVELOPER: is_project_member,
             CLIENT: is_project_member,
         },
-        "update,partial_update": {ADMIN: True, PROJECT_MANAGER: True},
+        "update,partial_update": {
+            ADMIN: True,
+            PROJECT_MANAGER: anyof(is_project_creator, is_project_member),
+        },
         "options": {ADMIN: True, PROJECT_MANAGER: True},
-        "destroy": {ADMIN: True, PROJECT_MANAGER: True},
+        "destroy": {
+            ADMIN: True,
+            PROJECT_MANAGER: anyof(is_project_creator, is_project_member),
+        },
     }
 
     def list(self, request):
@@ -142,7 +148,7 @@ def is_task_assignee(request, view):
     return task.assigned_to == user
 
 
-def is_project_member_or_creator(request, view):
+def is_project_member_or_creator_using_task(request, view):
     user = request.user
     task = view.get_object()
     project_id = task.project_id.id
@@ -170,7 +176,7 @@ class TaskViewSet(ModelViewSet):
         },
         "retrieve": {
             ADMIN: True,
-            PROJECT_MANAGER: is_project_member_or_creator,
+            PROJECT_MANAGER: is_project_member_or_creator_using_task,
             TECH_LEAD: anyof(is_task_creator, is_task_assignee),
             DEVELOPER: is_task_assignee,
             CLIENT: is_task_assignee,
@@ -181,7 +187,7 @@ class TaskViewSet(ModelViewSet):
             TECH_LEAD: anyof(is_task_creator, is_task_assignee),
         },
         "options": {ADMIN: True, PROJECT_MANAGER: True},
-        "destroy": {ADMIN: True, PROJECT_MANAGER: is_project_member_or_creator},
+        "destroy": {ADMIN: True, PROJECT_MANAGER: is_project_member_or_creator_using_task},
     }
 
     def list(self, request):

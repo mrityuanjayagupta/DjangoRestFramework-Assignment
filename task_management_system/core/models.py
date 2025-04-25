@@ -52,7 +52,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class Project(models.Model):
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=50, unique=True)
     description = models.CharField(max_length=200)
     created_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name="projects"
@@ -74,7 +74,7 @@ class Task(models.Model):
     status = models.CharField(max_length=20, choices=TaskStatusChoices.choices)
     priority = models.CharField(max_length=20, choices=PriorityChoices.choices)
     project_id = models.ForeignKey(
-        Project, on_delete=models.SET_NULL, null=True, related_name="tasks"
+        Project, on_delete=models.CASCADE, null=True, related_name="tasks"
     )
     assigned_to = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name="assigned_tasks"
