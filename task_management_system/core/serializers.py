@@ -52,17 +52,17 @@ class TaskSerializer(serializers.ModelSerializer):
     created_by = serializers.PrimaryKeyRelatedField(read_only=True)
 
     def validate(self, data):
-        assigned_to = data.get('assigned_to')
-        project = data.get('project_id')
-
+        assigned_to = data.get("assigned_to")
+        project = data.get("project_id")
         if assigned_to and project:
             if not project.members.filter(pk=assigned_to.pk).exists():
-                raise serializers.ValidationError({
-                    "assigned_to": "The assigned user must be a member of the selected project."
-                })
+                raise serializers.ValidationError(
+                    {
+                        "assigned_to": "The assigned user must be a member of the selected project."
+                    }
+                )
 
         return data
-
 
     class Meta:
         model = Task

@@ -2,6 +2,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework_roles.granting import is_self, allof, anyof
 from django.db.models import Q
+from rest_framework import serializers
 
 from core.constants import (
     ADMIN,
@@ -142,12 +143,15 @@ class ProjectViewSet(ModelViewSet):
 def is_project_member_using_task(request, view):
     user = request.user
     data = request.data
+    project_id = data.get("project_id")
+    if project_id is None:
+        raise serializers.ValidationError({"project": "Missing Project Field"})
     if (
         user.role == PROJECT_MANAGER
-        and user.projects.filter(pk=data["project_id"]).exists()
+        and user.projects.filter(pk=project_id).exists()
     ):
         return True
-    return user.project_members.filter(pk=data["project_id"]).exists()
+    return user.project_members.filter(pk=project_id).exists()
 
 
 def is_task_creator(request, view):

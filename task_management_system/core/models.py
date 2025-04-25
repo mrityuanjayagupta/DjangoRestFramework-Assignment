@@ -82,6 +82,9 @@ class Task(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.title
+    
 
 class Comment(models.Model):
     content = models.CharField(max_length=200)
@@ -95,3 +98,6 @@ class Comment(models.Model):
         Project, on_delete=models.SET_NULL, null=True, related_name="comments"
     )
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.content
