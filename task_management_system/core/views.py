@@ -7,11 +7,13 @@ from django.utils.decorators import method_decorator
 from django.db.models import Q
 from django.views.decorators.cache import cache_page
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
+from django.core.paginator import Paginator
 
 from core.constants import (
     ADMIN,
     CLIENT,
     DEVELOPER,
+    PAGE_SIZE,
     PROJECT_MANAGER,
     TECH_LEAD,
 )
@@ -68,6 +70,7 @@ class UserViewSet(ModelViewSet):
             )
 
         user = request.user
+        page = request.GET.get("page", 1)
         if user.role == PROJECT_MANAGER:
             projects = Project.objects.filter(
                 Q(created_by=user) | Q(members=user)
@@ -77,7 +80,8 @@ class UserViewSet(ModelViewSet):
             ).distinct()
         elif user.role in [TECH_LEAD, DEVELOPER, CLIENT]:
             users = User.objects.none()
-        serializer = self.get_serializer(users, many=True)
+        paginator = Paginator(users, PAGE_SIZE)
+        serializer = self.get_serializer(paginator.page(page), many=True)
         return Response(serializer.data)
 
 
@@ -138,13 +142,15 @@ class ProjectViewSet(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         user = request.user
+        page = request.GET.get("page", 1)
         if user.role == PROJECT_MANAGER:
             projects = Project.objects.filter(
                 Q(members=user) | Q(created_by=user)
             ).distinct()
         elif user.role in [TECH_LEAD, DEVELOPER, CLIENT]:
             projects = Project.objects.filter(members=user)
-        serializer = self.get_serializer(projects, many=True)
+        paginator = Paginator(projects, PAGE_SIZE)
+        serializer = self.get_serializer(paginator.page(page), many=True)
         return Response(serializer.data)
 
 
@@ -228,7 +234,7 @@ class TaskViewSet(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         user = request.user
-
+        page = request.GET.get("page", 1)
         if user.role == PROJECT_MANAGER:
             projects = user.project_members.all()
             tasks = Task.objects.filter(project_id__in=projects)
@@ -238,7 +244,8 @@ class TaskViewSet(ModelViewSet):
             ).distinct()
         elif user.role in [DEVELOPER, CLIENT]:
             tasks = Task.objects.filter(assigned_to=user)
-        serializer = self.get_serializer(tasks, many=True)
+        paginator = Paginator(tasks, PAGE_SIZE)
+        serializer = self.get_serializer(paginator.page(page), many=True)
         return Response(serializer.data)
 
 
@@ -348,7 +355,7 @@ class CommentViewSet(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         user = request.user
-
+        page = request.GET.get("page", 1)
         if user.role == PROJECT_MANAGER:
             projects = Project.objects.filter(
                 Q(created_by=user) | Q(members=user)
@@ -373,5 +380,6 @@ class CommentViewSet(ModelViewSet):
             comments = Comment.objects.filter(
                 Q(task_id__in=task_ids) | Q(project_id__in=project_ids)
             ).distinct()
-        serializer = self.get_serializer(comments, many=True)
+        paginator = Paginator(comments, PAGE_SIZE)
+        serializer = self.get_serializer(paginator.page(page), many=True)
         return Response(serializer.data)

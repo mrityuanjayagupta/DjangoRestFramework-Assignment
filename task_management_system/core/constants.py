@@ -26,3 +26,6 @@ class PriorityChoices(models.TextChoices):
     LOW = "LOW", "Low Priority"
     MEDIUM = "MEDIUM", "Medium Priority"
     HIGH = "HIGH", "High Priority"
+
+
+PAGE_SIZE = 5
