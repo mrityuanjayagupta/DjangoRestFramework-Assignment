@@ -17,6 +17,18 @@ from core.constants import (
     PROJECT_MANAGER,
     TECH_LEAD,
 )
+from core.utils import (
+    check_comment,
+    is_allowed_to_retrieve,
+    is_comment_author,
+    is_project_creator,
+    is_project_member,
+    is_project_member_or_creator_using_task,
+    is_project_member_using_comment,
+    is_project_member_using_task,
+    is_task_assignee,
+    is_task_creator,
+)
 from .models import Project, Task, User, Comment
 from .serializers import (
     CommentSerializer,
@@ -24,19 +36,6 @@ from .serializers import (
     ProjectSerializer,
     TaskSerializer,
 )
-
-
-def is_user_in_projects(request, view):
-    user = request.user
-    target_user = view.get_object()
-    projects = Project.objects.filter(Q(created_by=user) | Q(members=user)).distinct()
-    return Project.objects.filter(
-        Q(members=target_user) | Q(created_by=target_user), id__in=projects
-    ).exists()
-
-
-def is_allowed_to_retrieve(request, view):
-    return is_self(request, view) or is_user_in_projects(request, view)
 
 
 class UserViewSet(ModelViewSet):
@@ -80,21 +79,14 @@ class UserViewSet(ModelViewSet):
             ).distinct()
         elif user.role in [TECH_LEAD, DEVELOPER, CLIENT]:
             users = User.objects.none()
-        paginator = Paginator(users, PAGE_SIZE)
-        serializer = self.get_serializer(paginator.page(page), many=True)
+        try:
+            paginator = Paginator(users, PAGE_SIZE)
+            serializer = self.get_serializer(paginator.page(page), many=True)
+        except Exception as e:
+            return Response(
+                {"detail": "page is not valid"}, status=status.HTTP_400_BAD_REQUEST
+            )
         return Response(serializer.data)
-
-
-def is_project_member(request, view):
-    user = request.user
-    project = view.get_object()
-    return project.members.filter(pk=user.pk).exists()
-
-
-def is_project_creator(request, view):
-    user = request.user
-    project = view.get_object()
-    return project.created_by == user
 
 
 class ProjectViewSet(ModelViewSet):
@@ -154,42 +146,14 @@ class ProjectViewSet(ModelViewSet):
             projects = projects.filter(name__icontains=name)
 
         page = request.GET.get("page", 1)
-        paginator = Paginator(projects, PAGE_SIZE)
-        serializer = self.get_serializer(paginator.page(page), many=True)
+        try:
+            paginator = Paginator(projects, PAGE_SIZE)
+            Sserializer = self.get_serializer(paginator.page(page), many=True)
+        except Exception as e:
+            return Response(
+                {"detail": "page is not valid"}, status=status.HTTP_400_BAD_REQUEST
+            )
         return Response(serializer.data)
-
-
-def is_project_member_using_task(request, view):
-    user = request.user
-    data = request.data
-    project_id = data.get("project_id")
-    if project_id is None:
-        raise serializers.ValidationError({"project": "Missing Project Field"})
-    if user.role == PROJECT_MANAGER and user.projects.filter(pk=project_id).exists():
-        return True
-    return user.project_members.filter(pk=project_id).exists()
-
-
-def is_task_creator(request, view):
-    user = request.user
-    task = view.get_object()
-    return task.created_by == user
-
-
-def is_task_assignee(request, view):
-    user = request.user
-    task = view.get_object()
-    return task.assigned_to == user
-
-
-def is_project_member_or_creator_using_task(request, view):
-    user = request.user
-    task = view.get_object()
-    project_id = task.project_id.id
-    return (
-        user.projects.filter(pk=project_id).exists()
-        or user.project_members.filter(pk=project_id).exists()
-    )
 
 
 class TaskViewSet(ModelViewSet):
@@ -252,60 +216,14 @@ class TaskViewSet(ModelViewSet):
         if title:
             tasks = tasks.filter(title__icontains=title)
         page = request.GET.get("page", 1)
-        paginator = Paginator(tasks, PAGE_SIZE)
-        serializer = self.get_serializer(paginator.page(page), many=True)
+        try:
+            paginator = Paginator(tasks, PAGE_SIZE)
+            serializer = self.get_serializer(paginator.page(page), many=True)
+        except Exception as e:
+            return Response(
+                {"detail": "page is not valid"}, status=status.HTTP_400_BAD_REQUEST
+            )
         return Response(serializer.data)
-
-
-def check_comment_using_task_and_project(user, project_id, task_id):
-    if project_id:
-        if (
-            user.role == PROJECT_MANAGER
-            and user.projects.filter(pk=project_id).exists()
-        ):
-            return True
-        return user.project_members.filter(pk=project_id).exists()
-    elif task_id:
-        task = Task.objects.get(id=task_id)
-        if user.role == PROJECT_MANAGER:
-            projects = Project.objects.filter(
-                Q(members=user) | Q(created_by=user)
-            ).distinct()
-            return (task.assigned_to == user) or (task.project_id in projects)
-        elif user.role == TECH_LEAD:
-            return Task.objects.filter(
-                Q(assigned_to=user) | Q(created_by=user), id=task_id
-            ).exists()
-        else:
-            return task.assigned_to == user
-
-
-def is_project_member_using_comment(request, view):
-    user = request.user
-    data = request.data
-    if data.get("project_id") and data.get("task_id"):
-        return False
-    project_id = data.get("project_id")
-    task_id = data.get("task_id")
-    return check_comment_using_task_and_project(user, project_id, task_id)
-
-
-def check_comment(request, view):
-    user = request.user
-    comment = view.get_object()
-    project_id = None
-    task_id = None
-    if comment.project_id:
-        project_id = comment.project_id.id
-    if comment.task_id:
-        task_id = comment.task_id.id
-    return check_comment_using_task_and_project(user, project_id, task_id)
-
-
-def is_comment_author(request, view):
-    user = request.user
-    comment = view.get_object()
-    return comment.author == user
 
 
 class CommentViewSet(ModelViewSet):
@@ -388,6 +306,11 @@ class CommentViewSet(ModelViewSet):
             comments = Comment.objects.filter(
                 Q(task_id__in=task_ids) | Q(project_id__in=project_ids)
             ).distinct()
-        paginator = Paginator(comments, PAGE_SIZE)
-        serializer = self.get_serializer(paginator.page(page), many=True)
+        try:
+            paginator = Paginator(comments, PAGE_SIZE)
+            serializer = self.get_serializer(paginator.page(page), many=True)
+        except Exception as e:
+            return Response(
+                {"detail": "page is not valid"}, status=status.HTTP_400_BAD_REQUEST
+            )
         return Response(serializer.data)
