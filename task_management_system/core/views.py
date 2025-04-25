@@ -1,8 +1,12 @@
+from rest_framework.response import Response
+from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.decorators import action
-from rest_framework_roles.granting import is_self, allof, anyof
-from django.db.models import Q
+from rest_framework_roles.granting import is_self, anyof
 from rest_framework import serializers
+from django.utils.decorators import method_decorator
+from django.db.models import Q
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 
 from core.constants import (
     ADMIN,
@@ -18,8 +22,6 @@ from .serializers import (
     ProjectSerializer,
     TaskSerializer,
 )
-from rest_framework.response import Response
-from rest_framework import status
 
 
 def is_user_in_projects(request, view):
@@ -53,6 +55,9 @@ class UserViewSet(ModelViewSet):
         "destroy": {ADMIN: True},
     }
 
+    @method_decorator(cache_page(60 * 2))
+    @method_decorator(vary_on_headers("Authorization"))
+    @method_decorator(vary_on_cookie)
     def list(self, request):
         try:
             users = User.objects.all()
@@ -121,6 +126,9 @@ class ProjectViewSet(ModelViewSet):
         },
     }
 
+    @method_decorator(cache_page(60 * 2))
+    @method_decorator(vary_on_headers("Authorization"))
+    @method_decorator(vary_on_cookie)
     def list(self, request):
         try:
             projects = Project.objects.all()
@@ -146,10 +154,7 @@ def is_project_member_using_task(request, view):
     project_id = data.get("project_id")
     if project_id is None:
         raise serializers.ValidationError({"project": "Missing Project Field"})
-    if (
-        user.role == PROJECT_MANAGER
-        and user.projects.filter(pk=project_id).exists()
-    ):
+    if user.role == PROJECT_MANAGER and user.projects.filter(pk=project_id).exists():
         return True
     return user.project_members.filter(pk=project_id).exists()
 
@@ -211,6 +216,9 @@ class TaskViewSet(ModelViewSet):
         },
     }
 
+    @method_decorator(cache_page(60 * 2))
+    @method_decorator(vary_on_headers("Authorization"))
+    @method_decorator(vary_on_cookie)
     def list(self, request):
         try:
             tasks = Task.objects.all()
@@ -327,6 +335,9 @@ class CommentViewSet(ModelViewSet):
         },
     }
 
+    @method_decorator(cache_page(60 * 2))
+    @method_decorator(vary_on_headers("Authorization"))
+    @method_decorator(vary_on_cookie)
     def list(self, request):
         try:
             comments = Comment.objects.all()
