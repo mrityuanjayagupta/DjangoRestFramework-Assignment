@@ -39,6 +39,11 @@ from .serializers import (
 
 
 class UserViewSet(ModelViewSet):
+    """
+    ViewSet for User model with role-based permissions and caching.
+    Supports listing users with pagination and restricted access based on roles.
+    """
+
     serializer_class = CustomUserDetailsSerializer
     queryset = User.objects.all()
     view_permissions = {
@@ -52,7 +57,13 @@ class UserViewSet(ModelViewSet):
             CLIENT: is_self,
         },
         "update,partial_update": {ADMIN: True},
-        "options": {ADMIN: True},
+        "options": {
+            ADMIN: True,
+            PROJECT_MANAGER: True,
+            TECH_LEAD: True,
+            DEVELOPER: True,
+            CLIENT: True,
+        },
         "destroy": {ADMIN: True},
     }
 
@@ -60,6 +71,11 @@ class UserViewSet(ModelViewSet):
     @method_decorator(vary_on_headers("Authorization"))
     @method_decorator(vary_on_cookie)
     def list(self, request):
+        """
+        List users with role-based filtering and pagination.
+        Project managers see users associated with their projects.
+        Tech leads, developers, and clients see an empty list.
+        """
         try:
             users = User.objects.all()
         except Exception as e:
@@ -90,6 +106,11 @@ class UserViewSet(ModelViewSet):
 
 
 class ProjectViewSet(ModelViewSet):
+    """
+    ViewSet for Project model with role-based permissions and caching.
+    Supports listing projects with pagination and restricted access based on roles.
+    """
+
     serializer_class = ProjectSerializer
     queryset = Project.objects.all()
     view_permissions = {
@@ -115,7 +136,13 @@ class ProjectViewSet(ModelViewSet):
             ADMIN: True,
             PROJECT_MANAGER: anyof(is_project_creator, is_project_member),
         },
-        "options": {ADMIN: True, PROJECT_MANAGER: True},
+        "options": {
+            ADMIN: True,
+            PROJECT_MANAGER: True,
+            TECH_LEAD: True,
+            DEVELOPER: True,
+            CLIENT: True,
+        },
         "destroy": {
             ADMIN: True,
             PROJECT_MANAGER: anyof(is_project_creator, is_project_member),
@@ -126,6 +153,12 @@ class ProjectViewSet(ModelViewSet):
     @method_decorator(vary_on_headers("Authorization"))
     @method_decorator(vary_on_cookie)
     def list(self, request):
+        """
+        List projects with filtering based on user role:
+        - Project Managers see projects they created or are members of.
+        - Tech Leads, Developers, and Clients see projects they are members of.
+        - Admins see all projects.
+        """
         try:
             projects = Project.objects.all()
         except Exception as e:
@@ -157,6 +190,11 @@ class ProjectViewSet(ModelViewSet):
 
 
 class TaskViewSet(ModelViewSet):
+    """
+    ViewSet for Task model with role-based permissions and caching.
+    Supports listing tasks with pagination and restricted access based on roles.
+    """
+
     serializer_class = TaskSerializer
     queryset = Task.objects.all()
     view_permissions = {
@@ -184,7 +222,13 @@ class TaskViewSet(ModelViewSet):
             PROJECT_MANAGER: is_project_member_using_task,
             TECH_LEAD: anyof(is_task_creator, is_task_assignee),
         },
-        "options": {ADMIN: True, PROJECT_MANAGER: True},
+        "options": {
+            ADMIN: True,
+            PROJECT_MANAGER: True,
+            TECH_LEAD: True,
+            DEVELOPER: True,
+            CLIENT: True,
+        },
         "destroy": {
             ADMIN: True,
             PROJECT_MANAGER: is_project_member_or_creator_using_task,
@@ -195,6 +239,13 @@ class TaskViewSet(ModelViewSet):
     @method_decorator(vary_on_headers("Authorization"))
     @method_decorator(vary_on_cookie)
     def list(self, request):
+        """
+        List tasks with filtering based on user role:
+        - Project Managers see tasks related to projects they are part of.
+        - Tech Leads see assigned and created tasks.
+        - Developers and Clients see only assigned tasks.
+        Implements pagination and error handling.
+        """
         try:
             tasks = Task.objects.all()
         except Exception as e:
@@ -227,6 +278,11 @@ class TaskViewSet(ModelViewSet):
 
 
 class CommentViewSet(ModelViewSet):
+    """
+    ViewSet for Comment model with role-based permissions and caching.
+    Supports listing comments with pagination and restricted access based on roles.
+    """
+
     serializer_class = CommentSerializer
     queryset = Comment.objects.all()
 
@@ -259,7 +315,13 @@ class CommentViewSet(ModelViewSet):
             DEVELOPER: is_comment_author,
             CLIENT: is_comment_author,
         },
-        "options": {ADMIN: True, PROJECT_MANAGER: True},
+        "options": {
+            ADMIN: True,
+            PROJECT_MANAGER: True,
+            TECH_LEAD: True,
+            DEVELOPER: True,
+            CLIENT: True,
+        },
         "destroy": {
             ADMIN: True,
             PROJECT_MANAGER: check_comment,
@@ -272,6 +334,12 @@ class CommentViewSet(ModelViewSet):
     @method_decorator(vary_on_headers("Authorization"))
     @method_decorator(vary_on_cookie)
     def list(self, request):
+        """
+        List comments with filtering based on user role:
+        - Shows comments for tasks or projects where the user is a member.
+        - Admin sees all comments.
+        Implements pagination and error handling.
+        """
         try:
             comments = Comment.objects.all()
             projects = Project.objects.all()

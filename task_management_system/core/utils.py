@@ -6,6 +6,10 @@ from rest_framework import serializers
 
 
 def is_user_in_projects(request, view):
+    """
+    Check if the user has created the project or
+    is a member of the project
+    """
     user = request.user
     target_user = view.get_object()
     projects = Project.objects.filter(Q(created_by=user) | Q(members=user)).distinct()
@@ -15,22 +19,35 @@ def is_user_in_projects(request, view):
 
 
 def is_allowed_to_retrieve(request, view):
+    """
+    Check if the user can retrieve the projects or not
+    """
     return is_self(request, view) or is_user_in_projects(request, view)
 
 
 def is_project_member(request, view):
+    """
+    Check if the current user is a member of the project
+    """
     user = request.user
     project = view.get_object()
     return project.members.filter(pk=user.pk).exists()
 
 
 def is_project_creator(request, view):
+    """
+    Check if the current user has created the project
+    """
     user = request.user
     project = view.get_object()
     return project.created_by == user
 
 
 def is_project_member_using_task(request, view):
+    """
+    Check if the user has created a ptoject or is a member of the project
+    for tasks
+    """
     user = request.user
     data = request.data
     project_id = data.get("project_id")
@@ -42,12 +59,18 @@ def is_project_member_using_task(request, view):
 
 
 def is_task_creator(request, view):
+    """
+    Check if the user has created a task
+    """
     user = request.user
     task = view.get_object()
     return task.created_by == user
 
 
 def is_task_assignee(request, view):
+    """
+    Check if the user has been assigned the task
+    """
     user = request.user
     task = view.get_object()
     return task.assigned_to == user
@@ -64,6 +87,9 @@ def is_project_member_or_creator_using_task(request, view):
 
 
 def check_comment_using_task_and_project(user, project_id, task_id):
+    """
+    Check if the user can access the comment of the project or task
+    """
     if project_id:
         if (
             user.role == PROJECT_MANAGER
@@ -109,6 +135,9 @@ def check_comment(request, view):
 
 
 def is_comment_author(request, view):
+    """
+    Check if the user is the author of the comment
+    """
     user = request.user
     comment = view.get_object()
     return comment.author == user

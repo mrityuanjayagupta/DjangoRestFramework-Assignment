@@ -28,4 +28,4 @@ class PriorityChoices(models.TextChoices):
     HIGH = "HIGH", "High Priority"
 
 
-PAGE_SIZE = 5
+PAGE_SIZE = 15
