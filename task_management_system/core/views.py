@@ -18,6 +18,7 @@ from .serializers import (
     TaskSerializer,
 )
 from rest_framework.response import Response
+from rest_framework import status
 
 
 def is_user_in_projects(request, view):
@@ -52,7 +53,14 @@ class UserViewSet(ModelViewSet):
     }
 
     def list(self, request):
-        users = User.objects.all()
+        try:
+            users = User.objects.all()
+        except Exception as e:
+            return Response(
+                {"detail": f"Error retrieving users: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         user = request.user
         if user.role == PROJECT_MANAGER:
             projects = Project.objects.filter(
@@ -113,7 +121,13 @@ class ProjectViewSet(ModelViewSet):
     }
 
     def list(self, request):
-        projects = Project.objects.all()
+        try:
+            projects = Project.objects.all()
+        except Exception as e:
+            return Response(
+                {"detail": f"Error retrieving projects: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         user = request.user
         if user.role == PROJECT_MANAGER:
             projects = Project.objects.filter(
@@ -194,7 +208,13 @@ class TaskViewSet(ModelViewSet):
     }
 
     def list(self, request):
-        tasks = Task.objects.all()
+        try:
+            tasks = Task.objects.all()
+        except Exception as e:
+            return Response(
+                {"detail": f"Error retrieving tasks: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         user = request.user
 
         if user.role == PROJECT_MANAGER:
@@ -304,8 +324,14 @@ class CommentViewSet(ModelViewSet):
     }
 
     def list(self, request):
-        tasks = Comment.objects.all()
-        projects = Project.objects.all()
+        try:
+            comments = Comment.objects.all()
+            projects = Project.objects.all()
+        except Exception as e:
+            return Response(
+                {"detail": f"Error retrieving comments/projects: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         user = request.user
 
         if user.role == PROJECT_MANAGER:
@@ -315,16 +341,22 @@ class CommentViewSet(ModelViewSet):
             tasks = Task.objects.filter(
                 Q(assigned_to=user) | Q(project_id__in=projects)
             ).distinct()
+            task_ids = tasks.values_list("id", flat=True)
+            project_ids = projects.values_list("id", flat=True)
+
+            comments = Comment.objects.filter(
+                Q(task_id__in=task_ids) | Q(project_id__in=project_ids)
+            ).distinct()
         elif user.role in [TECH_LEAD, DEVELOPER, CLIENT]:
             tasks = Task.objects.filter(
                 Q(assigned_to=user) | Q(created_by=user)
             ).distinct()
             projects = Project.objects.filter(members=user)
-        task_ids = tasks.values_list("id", flat=True)
-        project_ids = projects.values_list("id", flat=True)
+            task_ids = tasks.values_list("id", flat=True)
+            project_ids = projects.values_list("id", flat=True)
 
-        comments = Comment.objects.filter(
-            Q(task_id__in=task_ids) | Q(project_id__in=project_ids)
-        ).distinct()
+            comments = Comment.objects.filter(
+                Q(task_id__in=task_ids) | Q(project_id__in=project_ids)
+            ).distinct()
         serializer = self.get_serializer(comments, many=True)
         return Response(serializer.data)
